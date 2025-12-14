@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cleaner Attendance System | Bus Tracker</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-logo">🚌</span>
+          <div class="brand-text">
+            <h1>Cleaner Attendance System</h1>
+            <p>Mark student attendance by stop</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="auth-status" id="authStatus">Role: Cleaner</div>
+          <button id="logoutBtn" class="btn secondary">Logout</button>
+        </div>
+      </header>
+
+      <main class="app-main">
+        <section class="sidebar">
+          <!-- Route Info Card -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Assigned Route</h2>
+            </div>
+            <div id="routeInfo" class="route-info">
+              <p>Loading route information...</p>
+            </div>
+          </div>
+
+          <!-- Attendance Summary Card -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Today's Summary</h2>
+            </div>
+            <div id="attendanceSummary" class="attendance-summary">
+              <div class="summary-item">
+                <span class="summary-label">Total Students:</span>
+                <span class="summary-value" id="totalStudents">0</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Marked:</span>
+                <span class="summary-value" id="markedCount">0</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Pending:</span>
+                <span class="summary-value" id="pendingCount">0</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="map-section">
+          <div class="attendance-container">
+            <div class="attendance-header">
+              <h2>Student Attendance by Stop</h2>
+              <div class="date-display">
+                <span id="currentDate"></span>
+              </div>
+            </div>
+
+            <div id="stopsList" class="stops-list">
+              <!-- Stops will be populated here -->
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <span>Cleaner Attendance System - Bus Tracker</span>
+      </footer>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="cleaner.js"></script>
+  </body>
+</html>
+

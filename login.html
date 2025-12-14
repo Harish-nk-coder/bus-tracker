@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bus Tracker | Login</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app login-hero">
+      <div class="login-card card">
+        <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div class="brand brand-floating">
+            <span class="brand-logo" style="width:48px;height:48px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:24px;">🚌</span>
+            <div class="brand-text">
+              <h1 style="margin:0; font-size:18px;">Bus Tracker</h1>
+              <p style="margin:2px 0 0; font-size:12px; color:var(--text-soft);">Secure access to live tracking</p>
+            </div>
+          </div>
+          <div style="font-size:12px; color:var(--text-soft);">Welcome</div>
+        </header>
+
+        <main>
+          <form id="loginForm" class="login-form">
+            <div class="form-field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" required autocomplete="email" />
+            </div>
+
+            <div class="form-field">
+              <label for="password">Password</label>
+              <input id="password" name="password" type="password" required autocomplete="current-password" />
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:13px;"><input id="remember" type="checkbox" /> Remember me</label>
+              <a href="#" style="font-size:13px; color:var(--accent); text-decoration:none;">Forgot?</a>
+            </div>
+
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button type="submit" id="loginBtn" class="btn primary login-btn">Sign in</button>
+              <a href="index.html" class="btn">Continue as Demo</a>
+            </div>
+          </form>
+
+          <p class="hint" style="margin-top:12px; font-size:12px; color:var(--text-soft);">Demo accounts: <strong>student@demo.com</strong>, <strong>parent@demo.com</strong>, <strong>cleaner@demo.com</strong>, <strong>admin@demo.com</strong> (password: <strong>demo</strong>)</p>
+        </main>
+      </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+      // Ensure redirect if not authenticated
+      try { if (typeof checkAuthAndRedirect === 'function') checkAuthAndRedirect(); } catch(e){}
+
+      const form = document.getElementById('loginForm');
+      const btn = document.getElementById('loginBtn');
+
+      form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const remember = document.getElementById('remember').checked;
+
+        // show loading state
+        btn.classList.add('loading');
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner';
+        btn.appendChild(spinner);
+
+        try {
+          const result = await loginDemo({ email, password, remember });
+          if (result) {
+            // small delay to show animation
+            setTimeout(() => {
+              // Role-based redirection
+              if (result.role === 'cleaner') {
+                window.location.href = 'cleaner.html';
+              } else if (result.role === 'parent') {
+                window.location.href = 'parent.html';
+              } else if (result.role === 'admin') {
+                window.location.href = 'index.html';
+              } else {
+                window.location.href = 'index.html'; // student or default
+              }
+            }, 350);
+          } else {
+            alert('Invalid credentials. Try: student@demo.com, parent@demo.com, cleaner@demo.com, or admin@demo.com (password: demo)');
+          }
+        } finally {
+          btn.classList.remove('loading');
+          if (spinner.parentNode) spinner.parentNode.removeChild(spinner);
+        }
+      });
+    </script>
+  </body>
+</html>

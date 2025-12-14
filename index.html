@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Real-time school and college bus tracking for students. Track your bus location, get ETA predictions, and stay safe with live notifications." />
+    <title>School & College Bus Tracker | Live Student Bus Tracking</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="manifest.json" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-logo">🚌</span>
+          <div class="brand-text">
+            <h1>Student Bus Tracker</h1>
+            <p>Track your school & college bus in real-time</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="auth-status" id="authStatus">Role: Student</div>
+          <button id="loginBtn" class="btn">Login</button>
+          <button id="logoutBtn" class="btn secondary hidden">Logout</button>
+          <button id="searchToggleBtn" class="btn icon" title="Search" aria-label="Search">
+            <span>🔍</span>
+          </button>
+          <button id="themeToggleBtn" class="btn icon" title="Toggle Theme" aria-label="Toggle Theme">
+            <span id="themeIcon">🌙</span>
+          </button>
+          <button id="notificationsBtn" class="btn icon" title="Notifications" aria-label="Notifications">
+            <span>🔔</span>
+            <span id="notificationBadge" class="badge hidden">0</span>
+          </button>
+          <button id="locateMeBtn" class="btn primary">My Location</button>
+          <button id="toggleSimBtn" class="btn">Pause Demo</button>
+          <button id="menuToggleBtn" class="btn icon mobile-only" title="Menu" aria-label="Menu">
+            <span>☰</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Search Modal -->
+      <div id="searchModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Search</h2>
+            <button class="modal-close" aria-label="Close">&times;</button>
+          </div>
+          <input type="text" id="searchInput" placeholder="Search buses, routes, or stops..." class="search-input" />
+          <div id="searchResults" class="search-results"></div>
+        </div>
+      </div>
+
+      <!-- Notifications Panel -->
+      <div id="notificationsPanel" class="panel hidden">
+        <div class="panel-header">
+          <h2>Notifications</h2>
+          <button class="panel-close" aria-label="Close">&times;</button>
+        </div>
+        <div id="notificationsList" class="notifications-list"></div>
+        <button id="clearNotificationsBtn" class="btn secondary">Clear All</button>
+      </div>
+
+      <main class="app-main">
+        <section class="sidebar" id="sidebar">
+          <!-- Search Card -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Search</h2>
+            </div>
+            <input type="text" id="sidebarSearchInput" placeholder="Search buses, routes, stops..." class="search-input" />
+          </div>
+
+          <!-- Routes Card -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Student Routes</h2>
+              <button id="favoritesToggleBtn" class="btn-icon" title="Show Favorites">
+                <span>⭐</span>
+              </button>
+            </div>
+            <select id="routeSelect">
+              <option value="route1">Route 1 - Tambaram School Bus (Morning Shift)</option>
+              <option value="route2">Route 2 - Tambaram College Bus (Afternoon Shift)</option>
+              <option value="route3">Route 3 - Tambaram School Bus (Evening Return)</option>
+            </select>
+            <div id="refreshRate" class="refresh-info">
+              <span>Refresh: <span id="refreshRateValue">2s</span></span>
+              <input type="range" id="refreshRateSlider" min="1" max="10" value="2" />
+            </div>
+          </div>
+
+          <!-- Active Buses Card -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Active School Buses</h2>
+              <span id="busCount" class="badge">0</span>
+            </div>
+            <ul id="busList" class="bus-list"></ul>
+          </div>
+
+          <!-- Admin Panel -->
+          <div id="adminCard" class="card hidden">
+            <div class="card-header">
+              <h2>Admin: Manage Buses</h2>
+            </div>
+            <div class="admin-panel">
+              <label for="busSelectAdmin">Select Bus to Edit:</label>
+              <select id="busSelectAdmin" class="route-input"></select>
+              <form id="busForm" class="bus-form">
+                <label>Bus ID</label>
+                <input id="busIdInput" class="route-input" placeholder="e.g., C-110" required />
+                <label>Latitude</label>
+                <input id="busLatInput" type="number" step="0.0001" class="route-input" required />
+                <label>Longitude</label>
+                <input id="busLngInput" type="number" step="0.0001" class="route-input" required />
+                <label>Speed (km/h)</label>
+                <input id="busSpeedInput" type="number" step="1" class="route-input" required />
+                <label>Capacity</label>
+                <input id="busCapacityInput" type="number" step="1" class="route-input" required />
+                <label>Occupancy</label>
+                <input id="busOccupancyInput" type="number" step="1" class="route-input" required />
+                <label>Next Stop ID</label>
+                <input id="busNextStopInput" class="route-input" placeholder="e.g., S1" />
+                <label>Driver Name</label>
+                <input id="busDriverNameInput" class="route-input" placeholder="Driver name" />
+                <label>Driver Phone</label>
+                <input id="busDriverPhoneInput" class="route-input" placeholder="+91-XXXXXXXXXX" />
+                <div class="admin-actions">
+                  <button type="submit" class="btn primary">Add / Update Bus</button>
+                  <button type="button" id="busDeleteBtn" class="btn danger">Delete Bus</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Favorites Card -->
+          <div id="favoritesCard" class="card hidden">
+            <div class="card-header">
+              <h2>Favorites</h2>
+            </div>
+            <ul id="favoritesList" class="favorites-list"></ul>
+          </div>
+
+          <!-- Stop Information Card -->
+          <div id="stopInfoCard" class="card hidden">
+            <div class="card-header">
+              <h2>Next Stops</h2>
+            </div>
+            <div id="stopInfo" class="stop-info"></div>
+          </div>
+
+          <!-- Analytics Card -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Route Statistics</h2>
+              <button id="analyticsToggleBtn" class="btn-icon" title="View Analytics">
+                <span>📊</span>
+              </button>
+            </div>
+            <div id="routeStats" class="route-stats"></div>
+          </div>
+
+          <!-- Accessibility Options -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Accessibility</h2>
+            </div>
+            <div class="accessibility-controls">
+              <label>
+                Font Size:
+                <input type="range" id="fontSizeSlider" min="12" max="20" value="14" />
+                <span id="fontSizeValue">14px</span>
+              </label>
+              <button id="screenReaderBtn" class="btn secondary">Enable Screen Reader</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="map-section">
+          <div id="map" class="map"></div>
+          <!-- Floating Action Buttons -->
+          <div class="map-controls">
+            <button id="sosBtn" class="sos-btn" title="Emergency SOS" aria-label="Emergency SOS">
+              🆘 SOS
+            </button>
+            <button id="walkingDistanceBtn" class="floating-btn" title="Show Nearby Stops" aria-label="Show Nearby Stops">
+              🚶
+            </button>
+            <button id="multiRouteBtn" class="floating-btn" title="Plan Multi-Route Journey" aria-label="Plan Journey">
+              🗺️
+            </button>
+            <button id="feedbackBtn" class="floating-btn" title="Feedback & Ratings" aria-label="Feedback">
+              ⭐
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <!-- Login Modal -->
+      <div id="loginModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Login</h2>
+            <button class="modal-close" aria-label="Close">&times;</button>
+          </div>
+          <form id="loginForm" class="login-form">
+            <label>Name</label>
+            <input id="loginName" class="route-input" placeholder="Your name" />
+            <label>Role</label>
+            <select id="loginRole" class="route-input">
+              <option value="student">Student (View only)</option>
+              <option value="admin">Admin (Manage buses)</option>
+            </select>
+            <button type="submit" class="btn primary" style="margin-top:10px;">Login</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Chat Modal -->
+      <div id="chatModal" class="modal hidden">
+        <div class="modal-content chat-modal">
+          <div class="modal-header">
+            <h2>Contact Bus Driver</h2>
+            <button class="modal-close" aria-label="Close">&times;</button>
+          </div>
+          <div id="chatMessages" class="chat-messages"></div>
+          <div class="chat-input-container">
+            <input type="text" id="chatInput" placeholder="Message the bus driver about pickup, delays, or concerns..." class="chat-input" />
+            <button id="sendChatBtn" class="btn primary">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Modal -->
+      <div id="analyticsModal" class="modal hidden">
+        <div class="modal-content large-modal">
+          <div class="modal-header">
+            <h2>Route Analytics & History</h2>
+            <button class="modal-close" aria-label="Close">&times;</button>
+          </div>
+          <div class="analytics-tabs">
+            <button class="tab-btn active" data-tab="history">Trip History</button>
+            <button class="tab-btn" data-tab="stats">Statistics</button>
+            <button class="tab-btn" data-tab="popular">Popular Times</button>
+          </div>
+          <div id="analyticsContent" class="analytics-content"></div>
+        </div>
+      </div>
+
+      <!-- Multi-Route Planning Modal -->
+      <div id="multiRouteModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Plan Multi-Route Journey</h2>
+            <button class="modal-close" aria-label="Close">&times;</button>
+          </div>
+          <div class="route-planner">
+            <input type="text" id="startLocation" placeholder="Start location" class="route-input" />
+            <input type="text" id="endLocation" placeholder="Destination" class="route-input" />
+            <button id="planRouteBtn" class="btn primary">Plan Journey</button>
+            <div id="plannedRoute" class="planned-route"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback Modal -->
+      <div id="feedbackModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Feedback & Ratings</h2>
+            <button class="modal-close" aria-label="Close">&times;</button>
+          </div>
+          <div class="feedback-form">
+            <label>Select School Bus:</label>
+            <select id="feedbackBusSelect" class="route-input"></select>
+            <label>Rating:</label>
+            <div class="rating-stars" id="ratingStars">
+              <span class="star" data-rating="1">⭐</span>
+              <span class="star" data-rating="2">⭐</span>
+              <span class="star" data-rating="3">⭐</span>
+              <span class="star" data-rating="4">⭐</span>
+              <span class="star" data-rating="5">⭐</span>
+            </div>
+            <label>Category:</label>
+            <select id="feedbackCategory" class="route-input">
+              <option value="driver">Bus Driver</option>
+              <option value="cleanliness">Bus Cleanliness</option>
+              <option value="safety">Student Safety</option>
+              <option value="punctuality">Punctuality</option>
+              <option value="route">Route Efficiency</option>
+            </select>
+            <label>Comments:</label>
+            <textarea id="feedbackComments" class="route-input" rows="4" placeholder="Share your feedback about the school bus service..."></textarea>
+            <button id="submitFeedbackBtn" class="btn primary">Submit Feedback</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOS Modal -->
+      <div id="sosModal" class="modal hidden">
+        <div class="modal-content sos-modal">
+          <div class="modal-header">
+            <h2>Emergency SOS</h2>
+            <button class="modal-close" aria-label="Close">&times;</button>
+          </div>
+          <div class="sos-content">
+            <p>Emergency alert will be sent to school authorities, parents, and emergency services.</p>
+            <p style="font-size: 12px; color: var(--text-soft); margin-top: 8px;">For immediate help, also call your school emergency number.</p>
+            <button id="confirmSOSBtn" class="btn danger">Confirm Emergency</button>
+            <button id="cancelSOSBtn" class="btn secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="app-footer">
+        <span id="offlineIndicator" class="offline-indicator hidden">⚠️ Offline Mode</span>
+        <span>School & College Bus Tracking System - Ensuring Student Safety</span>
+      </footer>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin="anonymous"
+    ></script>
+    <script src="auth.js"></script>
+    <!-- Feature Modules -->
+    <script src="features/eta.js"></script>
+    <script src="features/notifications.js"></script>
+    <script src="features/favorites.js"></script>
+    <script src="features/search.js"></script>
+    <script src="features/chat.js"></script>
+    <script src="features/analytics.js"></script>
+    <script src="features/sos.js"></script>
+    <script src="features/theme.js"></script>
+    <script src="features/accessibility.js"></script>
+    <script src="features/offline.js"></script>
+    <script src="features/feedback.js"></script>
+    <script src="features/routePlanning.js"></script>
+    <!-- Main Application -->
+    <script src="app.js"></script>
+  </body>
+</html>
+
+
